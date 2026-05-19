@@ -1,0 +1,291 @@
+
+1.Find total amount collected from all bills:
+
+select sum(total_amt) as Total_Amount
+from Bill;
+
+-This query calculates the total revenue earned by the pharmacy by adding up all the bill amounts.
+It helps us know the overall sales generated from all customers.
+
+2.Show bills paid by UPI:
+
+select * from Bill
+where payment_method = 'UPI';
+
+-This query filters the Bill table and only displays those bills where the payment method is UPI.
+It helps the pharmacy analyze how many customers prefer digital payments compared to cash or card.
+
+
+3. Find customers who spent more than the average bill amount:
+
+select c_id,total_amt 
+from Bill
+where total_amt > (select avg(total_amt) from Bill);
+
+-Here, a subquery is used to calculate the average bill amount.
+Then, customers who spent more than the average are selected.
+This helps identify high-value customers who contribute more to the revenue.
+
+
+4.Customer and Bill (only customers who have bills):
+
+select name, total_amt
+from Customer 
+inner join Bill
+on Customer.c_id = Bill.c_id;
+
+-This query uses an INNER JOIN to combine Customer and Bill tables.
+It only shows customers who actually made purchases (i.e., who have a bill).
+Useful for seeing which customers have already bought medicines.
+
+
+5.Prescription and Medicine (only prescriptions with valid medicines):
+
+select Prescription.p_id, Medicine.name, Prescription.dosage, Prescription.duration
+from Prescription 
+inner join Medicine
+on Prescription.m_id = Medicine.m_id;
+
+-This query shows each prescription with the medicine name, dosage, and duration.
+It ensures that prescriptions are linked only with valid medicines present in the Medicine table.
+
+
+6.All customers and their bills (even if no bill):
+
+select Customer.name,Bill.total_amt
+from Customer 
+left join Bill  
+on Customer.c_id = Bill.c_id;
+
+-This query uses a LEFT JOIN to display all customers.
+If a customer has no bill, the bill amount appears as NULL.
+It helps to find inactive customers who haven’t purchased yet.
+
+
+7.All doctors and prescriptions (even if no prescription given):
+
+select Doctor.name, Prescription.p_id
+from Doctor 
+left join Prescription
+on Doctor.d_id = Prescription.d_id;
+
+-This query lists all doctors and the prescriptions they issued.
+Even doctors who haven’t prescribed anything yet will be displayed (with NULL).
+It helps track active vs inactive doctors.
+
+
+8.which doctor prescribed how many medicine:
+
+create view DoctorWorkload as
+select Doctor.d_id, Doctor.name, COUNT(Prescription.p_id) as total_prescriptions
+from Doctor 
+left join Prescription 
+on Doctor.d_id = Prescription.d_id
+group by Doctor.d_id, Doctor.name;
+
+select * from DoctorWorkload;
+
+-This creates a VIEW (like a virtual table) showing each doctor and the total prescriptions they wrote.
+It helps management easily analyze the workload of each doctor.
+Later, we can query the view directly instead of writing the full join query again.
+
+
+9.Finds medicines prescribed by doctor with ID 4.:
+
+select name
+from Medicine
+where m_id in (select m_id from Prescription
+where d_id = 4
+);
+
+-This query finds all medicines prescribed by a specific doctor (ID = 4).
+It helps in analyzing what kind of medicines a doctor usually prescribes.
+
+
+10.Subquery in FROM clause: List customers with their total amount spent:
+
+select name, total_spent
+from Customer c
+join (select c_id, sum(Total_Amt) AS Total_Spent
+from Bill
+group by c_id) 
+bsum on c.c_id = bsum.c_id;
+
+-Here, a subquery in FROM calculates how much each customer spent in total.
+Then, it is joined with the Customer table to display customer names with total spending.
+Useful to identify loyal and high-spending customers.
+
+
+11.Find medicines that will expire in the next 30 days:
+
+select name,brand,expiry
+from Medicine
+where expiry between current_date and current_date + interval '30' day;
+
+-This query finds all medicines that are about to expire within 30 days.
+It is useful for stock management, so the pharmacy can sell them quickly before expiry.
+
+
+12.Nested Subquery: Doctors who prescribed Paracetamol:
+
+select Doctor.name
+from Doctor
+where Doctor.d_id 
+in (select Prescription.d_id
+from Prescription 
+where Prescription.m_id = (select m_id
+from Medicine
+where name = 'Paracetamol')
+);
+
+-This is a nested subquery.
+It first finds the medicine ID of Paracetamol, then checks which prescriptions used it, and finally retrieves the doctors’ names.
+Helps find which doctors commonly prescribe Paracetamol.
+
+
+13.Find the average number of prescriptions per doctor:
+
+select avg(Prescription_count) as avg_prescriptions_per_doctor
+from (select d_id, count(*) as prescription_count
+from Prescription
+group by d_id
+);
+
+-This query calculates how many prescriptions each doctor wrote, and then finds the average across all doctors.
+It helps in knowing the overall doctor workload balance.
+
+
+14.Customers who received the most expensive medicine:
+
+select Customer.name
+from Customer 
+where Customer.c_id in (select Prescription.c_id
+from Prescription 
+where Prescription.m_id = (select m_id 
+from Medicine 
+where price = (select max(price) from Medicine)
+)
+);
+
+-This query identifies customers who were prescribed the most expensive medicine available.
+Helps analyze premium customers or cases needing high-cost treatment.
+
+
+15.Get daily revenue summary:
+
+select bill_date, sum(total_amt) as daily_revenue
+from Bill
+group by bill_date
+order by bill_date;
+
+-This groups bills by date and calculates the total revenue per day.
+Useful for tracking sales trends and busiest days.
+
+
+16.Doctors with the highest workload:
+
+select * from DoctorWorkload
+where total_prescriptions = (select max(total_prescriptions) from DoctorWorkload
+);
+
+-This query finds doctor(s) with the maximum prescriptions written.
+It helps identify the busiest doctor(s) in the pharmacy.
+
+
+17.List customers who paid via Card:
+
+select distinct Customer.name
+from Customer
+inner join Bill on Customer.c_id = Bill.c_id
+where Bill.payment_method = 'Card';
+
+-this query helps to analyze the preference for payments which were done by card.
+
+
+18.Find medicines whose price is above average price:
+
+select name, brand, price
+from Medicine
+where price > (select avg(price) from Medicine);
+
+-Retrieves medicines costing more than the average price of all medicines, helping identify expensive stock.
+
+
+19.Find medicines whose name starts with ‘Para’:
+
+select * from Medicine
+where name like 'Para%';
+
+-Finds medicines with names starting with ‘Para’, useful to filter a specific group like Paracetamol.
+
+
+20. Find bills where the total amount is greater than the customer’s average bill amount
+
+select b_id, c_id, total_amt
+from Bill 
+where total_amt > (
+    select avg(total_amt) 
+    from Bill  
+    where bill.c_id = bill.c_id
+);
+
+-Finds bills whose total amount exceeds that customer’s average bill, useful for detecting unusually high bills.
+
+
+21.returns medicines priced in that range 
+
+select * from Medicine
+where price between 30 and 50;
+
+-Selects medicines priced between 30 and 50 units, useful for mid-range product management.
+
+
+22. Find doctors who prescribed the most expensive medicine:
+
+select name from Doctor
+where d_id IN (
+select d_id from Prescription
+where m_id = (select m_id from Medicine where price = (select max(price) from Medicine)));
+
+-finds doctors who prescribed the priciest medicine in stock, useful for analyzing expensive treatment patterns.
+
+
+23.Find average bill amount per month
+
+select TO_CHAR(bill_date, 'YYYY-MM') as bill_month,
+avg(total_amt) as avg_monthly_bill
+from Bill
+group by TO_CHAR(bill_date, 'YYYY-MM')
+order by bill_month;
+
+-TO_CHAR(bill_date, 'YYYY-MM') converts the bill date into a string like '2025-09' (Year-Month).
+Then, it groups all bills by month and calculates the average bill amount per month using AVG(total_amt).
+This query provides insights into the pharmacy’s monthly revenue trends, helping to analyze peak and low sales periods over time.
+
+
+24.Find customers who never had a bill greater than 1000
+
+select name, c_id
+from Customer
+where not exists(
+select 1
+from Bill 
+where customer.c_id = bill.c_id and bill.total_amt > 1000
+);
+
+-The subquery inside NOT EXISTS checks if there is any bill for the customer where total_amt > 1000.
+The outer query selects customers where this condition is never true, meaning they always had bills ≤ 1000.
+This helps the pharmacy identify customers who consistently make small purchases, useful for targeted offers or loyalty programs.
+
+
+
+
+NASREEN-1,9,13,19
+NAAZ-2,11,17,24
+PADMA-7,10,20,23
+ANAMIKA-4,5,6,15
+MIHIKA-3,18,21,22
+DIKSHITA-8,14,16,12
+
+
+

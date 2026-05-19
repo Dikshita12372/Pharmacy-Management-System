@@ -1,0 +1,73 @@
+1)Medicine table:-
+
+create table Medicine
+(
+m_id int primary key,
+Name varchar2(20),
+Brand varchar2(20),
+Price int,
+Expiry date,
+Stock int
+);
+
+insert into Medicine values(&M_id,'&Name','&Brand',&Price,'&Expiry',&Stock);
+
+2)Customer table:-
+
+create table Customer
+(
+c_id int primary key,
+Name varchar2(20),
+Phone int,
+Address varchar2(20)
+);
+
+insert into Customer values(&c_id,'&Name',&Phone,'&Address');
+
+
+3)Doctor table:-
+
+create table Doctor
+(
+d_id int primary key,
+Name varchar2(20),
+Specialization varchar2(20),
+Phone varchar2(20)
+);
+
+insert into Doctor values(&d_id,'&Name','&Specialization',&Phone);
+
+
+4)Prescription table:-
+
+create table Prescription
+(
+p_id int primary key,
+c_id int,
+d_id int,
+prescription_date date,
+m_id int,
+Dosage Varchar2(15),
+Duration Varchar2(15),
+foreign key(c_id) references Customer(c_id),
+foreign key(d_id) references Doctor(d_id),
+foreign key(m_id) references Medicine(m_id)
+);
+
+insert into prescription values(&p_id,&c_id,&d_id,'&prescription_date',&m_id,'&Dosage','&Duration');
+
+5)bill table:-
+
+create table bill
+(
+b_id int primary key,
+c_id int,
+p_id int,
+bill_date date,
+total_amt decimal(10,2),
+payment_method varchar2(10),
+foreign key(c_id) references Customer(c_id),
+foreign key(p_id) references Prescription(p_id)
+);
+
+insert into bill values(&b_id,&c_id,&p_id,'&bill_date',&total_amt,'&payment_method');
